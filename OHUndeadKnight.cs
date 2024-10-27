@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections;
+using System.IO;
 using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
@@ -9,6 +12,7 @@ using ItemManager;
 using PieceManager;
 using ServerSync;
 using UnityEngine;
+
 
 
 
@@ -196,17 +200,17 @@ namespace OHUndeadKnight
             SetupWatcher();
         }
 
-        [HarmonyPatch(typeof(ObjectDB), "Awake")]
+        [HarmonyPatch(typeof(ZNetScene), "Awake")]
         public static class ObjectDB_Awake_Patch
         {
             [HarmonyPriority(Priority.Low)]
-            public static void Postfix(ObjectDB __instance)
+            public static void Postfix(ZNetScene __instance)
             {
-                if (__instance.m_items.Count == 0) return;
+                if (ObjectDB.instance.m_items.Count == 0) return;
 
                 // Retrieve the prefabs for OH_Broken_Sword, Bronze, and OH_Undead_Repair_Station
-                var brokenSwordPrefab = ZNetScene.instance.GetPrefab("OH_Broken_Sword");
-                var bronzeItemPrefab = ZNetScene.instance.GetPrefab("Bronze");
+                var brokenSwordPrefab = ObjectDB.instance.GetItemPrefab("OH_Broken_Sword");
+                var bronzeItemPrefab = ObjectDB.instance.GetItemPrefab("Bronze");
                 var undeadRepairStationPrefab = ZNetScene.instance.GetPrefab("OH_Undead_Repair_Station");
 
                 // Ensure all items are found before proceeding
@@ -231,11 +235,10 @@ namespace OHUndeadKnight
                     recipe.m_craftingStation = undeadRepairStationPrefab.GetComponent<CraftingStation>();
 
                     // Add the recipe to ObjectDB
-                    __instance.m_recipes.Add(recipe);
+                    ObjectDB.instance.m_recipes.Add(recipe);
                 }
             }
         }
-
         private void OnDestroy()
         {
             Config.Save();
