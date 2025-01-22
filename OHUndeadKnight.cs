@@ -23,7 +23,7 @@ namespace OHUndeadKnight
     public class OHUndeadKnightPlugin : BaseUnityPlugin
     {
         internal const string ModName = "OHUndeadKnight";
-        internal const string ModVersion = "0.0.3";
+        internal const string ModVersion = "0.0.6";
         internal const string Author = "OdinPlus";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -36,7 +36,20 @@ namespace OHUndeadKnight
 
         private static readonly ConfigSync ConfigSync = new(ModGUID)
             { DisplayName = ModName, CurrentVersion = ModVersion, MinimumRequiredVersion = ModVersion };
-        
+
+
+        internal static ConfigEntry<int> KnightRunSpeed = null!;
+        internal static ConfigEntry<int> KnightWalkingSpeed = null!;
+        internal static ConfigEntry<int> KnightSpeed = null!;
+        internal static ConfigEntry<int> KnightHealth = null!;
+        internal static ConfigEntry<string> KnightResistance = null!;
+        internal static ConfigEntry<float> KnightAttackDamage = null!;
+        internal static ConfigEntry<float> KnightChopDamage = null!;
+        internal static ConfigEntry<float> KnightSlashDamage = null!;
+        internal static ConfigEntry<float> KnightAttackForce = null!;
+        internal static ConfigEntry<float> KnightChopForce = null!;
+        internal static ConfigEntry<float> KnightSlashForce = null!;
+
 
         public enum Toggle
         {
@@ -49,7 +62,17 @@ namespace OHUndeadKnight
             _serverConfigLocked = config("1 - General", "Lock Configuration", Toggle.On,
                 "If on, the configuration is locked and can be changed by server admins only.");
             _ = ConfigSync.AddLockingConfigEntry(_serverConfigLocked);
-
+            KnightRunSpeed = config("Undead Hollow Knight", "Run Speed", 6, new ConfigDescription("Declare running speed for Hollow Knight"));
+            KnightWalkingSpeed = config("Undead Hollow Knight", "Walking Speed", 4, new ConfigDescription("Declare walking speed for Hollow Knight"));
+            KnightSpeed = config("Undead Hollow Knight", "Speed Modifier", 2, new ConfigDescription("Declare speed modified for Hollow Knight"));
+            KnightHealth = config("Undead Hollow Knight", "Health", 1200, new ConfigDescription("Declare health points for Hollow Knight"));
+            KnightResistance = config("Undead Hollow Knight", "Resistance", "Poison:Resistant, Pierce:VeryResistant, Spirit:Immune", new ConfigDescription("Declare resistances for Hollow Knight, format: Type:Modifier. Example: Poison:Resistant, Pierce:VeryResistant, Spirit:Immune"));
+            KnightAttackDamage = config("Undead Hollow Knight Attacks", "Attack Damage", 45f, new ConfigDescription("Declare the damage for the knight's main attack."));
+            KnightChopDamage = config("Undead Hollow Knight Attacks", "Chop Damage", 45f, new ConfigDescription("Declare the damage for the knight's chop attack."));
+            KnightSlashDamage = config("Undead Hollow Knight Attacks", "Slash Damage", 45f, new ConfigDescription("Declare the damage for the knight's slash attack."));
+            KnightAttackForce = config("Undead Hollow Knight Attacks", "Attack Force", 60f, new ConfigDescription("Declare the force for the knight's main attack."));
+            KnightChopForce = config("Undead Hollow Knight Attacks", "Chop Force", 60f, new ConfigDescription("Declare the force for the knight's chop attack."));
+            KnightSlashForce = config("Undead Hollow Knight Attacks", "Slash Force", 60f, new ConfigDescription("Declare the force for the knight's slash attack."));
 
             #region Pieces
 
@@ -102,14 +125,20 @@ namespace OHUndeadKnight
             OH_Knights_Spirit_Sword.Name.English("Knights Spirit Sword");
             OH_Knights_Spirit_Sword.Description.English("A sword spirit of a fallen knight.");
 
+            Item OH_Undead_Knight_Attack = new Item("undeadknight", "OH_Undead_Knight_Attack");
+            OH_Undead_Knight_Attack.Configurable = Configurability.Disabled;
+            OH_Undead_Knight_Attack.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_damages.m_slash = KnightAttackDamage.Value;
+            OH_Undead_Knight_Attack.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_attackForce = KnightAttackForce.Value;
 
-            Item OH_Undead_Knight_Attack = new("undeadknight", "OH_Undead_Knight_Attack");
-            OH_Undead_Knight_Attack.Configurable = Configurability.Full;
-            Item OH_Undead_Knight_Attack_Chop = new("undeadknight", "OH_Undead_Knight_Attack_Chop");
-            OH_Undead_Knight_Attack_Chop.Configurable = Configurability.Full;
-            Item OH_Undead_Knight_Attack_Slash = new("undeadknight", "OH_Undead_Knight_Attack_Slash");
-            OH_Undead_Knight_Attack_Slash.Configurable = Configurability.Full;
+            Item OH_Undead_Knight_Attack_Chop = new Item("undeadknight", "OH_Undead_Knight_Attack_Chop");
+            OH_Undead_Knight_Attack_Chop.Configurable = Configurability.Disabled;
+            OH_Undead_Knight_Attack_Chop.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_damages.m_slash = KnightChopDamage.Value;
+            OH_Undead_Knight_Attack_Chop.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_attackForce = KnightChopForce.Value;
 
+            Item OH_Undead_Knight_Attack_Slash = new Item("undeadknight", "OH_Undead_Knight_Attack_Slash");
+            OH_Undead_Knight_Attack_Slash.Configurable = Configurability.Disabled;
+            OH_Undead_Knight_Attack_Slash.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_damages.m_slash = KnightSlashDamage.Value;
+            OH_Undead_Knight_Attack_Slash.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_attackForce = KnightSlashForce.Value;
 
 
             Item OH_Undead_Knight_Sword = new("undeadknight", "OH_Undead_Knight_Sword");
@@ -177,6 +206,7 @@ namespace OHUndeadKnight
                 Biome = Heightmap.Biome.None,
                 CanSpawn = true,
                 SpawnChance = 100,
+                CreatureFaction = Character.Faction.Undead,
                 GroupSize = new CreatureManager.Range(1, 1),
                 Maximum = 1
 
@@ -190,6 +220,12 @@ namespace OHUndeadKnight
             OH_Undead_Knight.Drops["OH_Knights_Spirit_Sword"].Amount = new CreatureManager.Range(1, 1);
             OH_Undead_Knight.Drops["OH_Knights_Spirit_Sword"].DropChance = 0.3f;
 
+            OH_Undead_Knight.Prefab.GetComponent<Humanoid>().m_runSpeed = KnightRunSpeed.Value;
+            OH_Undead_Knight.Prefab.GetComponent<Humanoid>().m_walkSpeed = KnightWalkingSpeed.Value;
+            OH_Undead_Knight.Prefab.GetComponent<Humanoid>().m_speed = KnightSpeed.Value;
+            OH_Undead_Knight.Prefab.GetComponent<Humanoid>().m_health = KnightHealth.Value;
+            OH_Undead_Knight.Prefab.GetComponent<Humanoid>().m_damageModifiers = ParseDamageModifier(KnightResistance.Value);
+
             #endregion
 
 
@@ -199,34 +235,92 @@ namespace OHUndeadKnight
             _harmony.PatchAll(assembly);
             SetupWatcher();
         }
+        private static HitData.DamageModifiers ParseDamageModifier(string resistance)
+        {
+            HitData.DamageModifiers modifiers = new HitData.DamageModifiers();
 
-        [HarmonyPatch(typeof(ZNetScene), "Awake")]
+            // Initialize all damage types to normal
+            modifiers.m_blunt = HitData.DamageModifier.Normal;
+            modifiers.m_slash = HitData.DamageModifier.Normal;
+            modifiers.m_pierce = HitData.DamageModifier.Normal;
+            modifiers.m_fire = HitData.DamageModifier.Normal;
+            modifiers.m_frost = HitData.DamageModifier.Normal;
+            modifiers.m_lightning = HitData.DamageModifier.Normal;
+            modifiers.m_poison = HitData.DamageModifier.Normal;
+            modifiers.m_spirit = HitData.DamageModifier.Normal;
+
+            // Parse the resistance string, which should be in the format "Type:Modifier"
+            string[] resistancePairs = resistance.Split(',');
+
+            foreach (var pair in resistancePairs)
+            {
+                string[] parts = pair.Trim().Split(':');
+                if (parts.Length == 2 && Enum.TryParse(parts[0], true, out HitData.DamageType damageType)
+                                     && Enum.TryParse(parts[1], true, out HitData.DamageModifier damageModifier))
+                {
+                    switch (damageType)
+                    {
+                        case HitData.DamageType.Blunt:
+                            modifiers.m_blunt = damageModifier;
+                            break;
+                        case HitData.DamageType.Slash:
+                            modifiers.m_slash = damageModifier;
+                            break;
+                        case HitData.DamageType.Pierce:
+                            modifiers.m_pierce = damageModifier;
+                            break;
+                        case HitData.DamageType.Fire:
+                            modifiers.m_fire = damageModifier;
+                            break;
+                        case HitData.DamageType.Frost:
+                            modifiers.m_frost = damageModifier;
+                            break;
+                        case HitData.DamageType.Lightning:
+                            modifiers.m_lightning = damageModifier;
+                            break;
+                        case HitData.DamageType.Poison:
+                            modifiers.m_poison = damageModifier;
+                            break;
+                        case HitData.DamageType.Spirit:
+                            modifiers.m_spirit = damageModifier;
+                            break;
+                    }
+                }
+            }
+
+            return modifiers;
+        }
+
+
+
+        [HarmonyPatch(typeof(ObjectDB), "Awake")]
         public static class ObjectDB_Awake_Patch
         {
             [HarmonyPriority(Priority.Low)]
-            public static void Postfix(ZNetScene __instance)
+            public static void Postfix(ObjectDB __instance)
             {
                 if (ObjectDB.instance.m_items.Count == 0) return;
 
                 // Retrieve the prefabs for OH_Broken_Sword, Bronze, and OH_Undead_Repair_Station
                 var brokenSwordPrefab = ObjectDB.instance.GetItemPrefab("OH_Broken_Sword");
                 var bronzeItemPrefab = ObjectDB.instance.GetItemPrefab("Bronze");
-                var undeadRepairStationPrefab = ZNetScene.instance.GetPrefab("OH_Undead_Repair_Station");
+                var undeadRepairStationPrefab = ZNetScene.instance?.GetPrefab("OH_Undead_Repair_Station");
 
                 // Ensure all items are found before proceeding
                 if (brokenSwordPrefab != null && bronzeItemPrefab != null && undeadRepairStationPrefab != null)
                 {
                     // Create a new recipe for converting OH_Broken_Sword into Bronze
                     Recipe recipe = ScriptableObject.CreateInstance<Recipe>();
+                    recipe.name = "OH_Broken_Sword_Bronze_Recipe";
                     recipe.m_item = bronzeItemPrefab.GetComponent<ItemDrop>(); // Resulting item: Bronze
-                    recipe.m_amount = 1; // Amount of Bronze produced
+                    recipe.m_amount = 1;
 
                     // Define required materials
                     recipe.m_resources = new Piece.Requirement[]
                     {
                     new Piece.Requirement
                     {
-                        m_resItem = brokenSwordPrefab.GetComponent<ItemDrop>(), // Input item: OH_Broken_Sword
+                        m_resItem = brokenSwordPrefab.GetComponent<ItemDrop>(),
                         m_amount = 1 // Amount of OH_Broken_Sword needed
                     }
                     };
@@ -316,6 +410,6 @@ namespace OHUndeadKnight
         }
 
         #endregion
-        #endregion
     }
+    #endregion
 }
