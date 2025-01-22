@@ -23,7 +23,7 @@ namespace OHUndeadKnight
     public class OHUndeadKnightPlugin : BaseUnityPlugin
     {
         internal const string ModName = "OHUndeadKnight";
-        internal const string ModVersion = "0.0.6";
+        internal const string ModVersion = "0.0.7";
         internal const string Author = "OdinPlus";
         private const string ModGUID = Author + "." + ModName;
         private static string ConfigFileName = ModGUID + ".cfg";
@@ -50,6 +50,18 @@ namespace OHUndeadKnight
         internal static ConfigEntry<float> KnightChopForce = null!;
         internal static ConfigEntry<float> KnightSlashForce = null!;
 
+        internal static ConfigEntry<int> KingRunSpeed = null!;
+        internal static ConfigEntry<int> KingWalkingSpeed = null!;
+        internal static ConfigEntry<int> KingSpeed = null!;
+        internal static ConfigEntry<int> KingHealth = null!;
+        internal static ConfigEntry<string> KingResistance = null!;
+        internal static ConfigEntry<float> KingAttackDamage = null!;
+        internal static ConfigEntry<float> KingChopDamage = null!;
+        internal static ConfigEntry<float> KingSlashDamage = null!;
+        internal static ConfigEntry<float> KingAttackForce = null!;
+        internal static ConfigEntry<float> KingChopForce = null!;
+        internal static ConfigEntry<float> KingSlashForce = null!;
+
 
         public enum Toggle
         {
@@ -74,6 +86,19 @@ namespace OHUndeadKnight
             KnightChopForce = config("Undead Hollow Knight Attacks", "Chop Force", 60f, new ConfigDescription("Declare the force for the knight's chop attack."));
             KnightSlashForce = config("Undead Hollow Knight Attacks", "Slash Force", 60f, new ConfigDescription("Declare the force for the knight's slash attack."));
 
+            KingRunSpeed = config("Undead Hollow King", "Run Speed", 6, new ConfigDescription("Declare running speed for Hollow King"));
+            KingWalkingSpeed = config("Undead Hollow King", "Walking Speed", 4, new ConfigDescription("Declare walking speed for Hollow King"));
+            KingSpeed = config("Undead Hollow King", "Speed Modifier", 2, new ConfigDescription("Declare speed modified for Hollow King"));
+            KingHealth = config("Undead Hollow King", "Health", 1800, new ConfigDescription("Declare health points for Hollow King"));
+            KingResistance = config("Undead Hollow King", "Resistance", "Poison:Resistant, Pierce:VeryResistant, Spirit:Immune", new ConfigDescription("Declare resistances for Hollow King, format: Type:Modifier. Example: Poison:Resistant, Pierce:VeryResistant, Spirit:Immune"));
+            KingAttackDamage = config("Undead Hollow King Attacks", "Attack Damage", 60f, new ConfigDescription("Declare the damage for the King's main attack."));
+            KingChopDamage = config("Undead Hollow King Attacks", "Chop Damage", 60f, new ConfigDescription("Declare the damage for the King's chop attack."));
+            KingSlashDamage = config("Undead Hollow King Attacks", "Slash Damage", 60f, new ConfigDescription("Declare the damage for the King's slash attack."));
+            KingAttackForce = config("Undead Hollow King Attacks", "Attack Force", 65f, new ConfigDescription("Declare the force for the King's main attack."));
+            KingChopForce = config("Undead Hollow King Attacks", "Chop Force", 65f, new ConfigDescription("Declare the force for the King's chop attack."));
+            KingSlashForce = config("Undead Hollow King Attacks", "Slash Force", 65f, new ConfigDescription("Declare the force for the King's slash attack."));
+
+
             #region Pieces
 
             BuildPiece OH_Undead_Knight_Alter = new("undeadknight", "OH_Undead_Knight_Alter");
@@ -82,6 +107,13 @@ namespace OHUndeadKnight
             OH_Undead_Knight_Alter.RequiredItems.Add("SwordCheat", 1, false);
             OH_Undead_Knight_Alter.Tool.Add("OdinsHollowWand");
             OH_Undead_Knight_Alter.Category.Set("Hollow Pieces");
+
+            BuildPiece OH_Undead_King_Alter = new("undeadknight", "OH_Undead_King_Alter");
+            OH_Undead_King_Alter.Name.English("Undead King Alter");
+            OH_Undead_King_Alter.Description.English("An alter for summoning the King");
+            OH_Undead_King_Alter.RequiredItems.Add("SwordCheat", 1, false);
+            OH_Undead_King_Alter.Tool.Add("OdinsHollowWand");
+            OH_Undead_King_Alter.Category.Set("Hollow Pieces");
 
 
             BuildPiece OH_Undead_Repair_Station = new("undeadknight", "OH_Undead_Repair_Station");
@@ -121,6 +153,10 @@ namespace OHUndeadKnight
             OH_Broken_Sword.Description.English("A sword of a once great knight, now rusted and broken.");
             OH_Broken_Sword.DropsFrom.Add("Skeleton", .1f, 1, 1);
 
+            Item OH_Kings_Spirit_Shard = new("undeadknight", "OH_Kings_Spirit_Shard");
+            OH_Kings_Spirit_Shard.Name.English("Kings Spirit Shard");
+            OH_Kings_Spirit_Shard.Description.English("A soul of a fallen king.");
+
             Item OH_Knights_Spirit_Sword = new("undeadknight", "OH_Knights_Spirit_Sword");
             OH_Knights_Spirit_Sword.Name.English("Knights Spirit Sword");
             OH_Knights_Spirit_Sword.Description.English("A sword spirit of a fallen knight.");
@@ -141,13 +177,29 @@ namespace OHUndeadKnight
             OH_Undead_Knight_Attack_Slash.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_attackForce = KnightSlashForce.Value;
 
 
+            Item OH_Undead_King_Attack = new Item("undeadknight", "OH_Undead_King_Attack");
+            OH_Undead_King_Attack.Configurable = Configurability.Disabled;
+            OH_Undead_King_Attack.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_damages.m_slash = KingAttackDamage.Value;
+            OH_Undead_King_Attack.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_attackForce = KingAttackForce.Value;
+
+            Item OH_Undead_King_Attack_Chop = new Item("undeadknight", "OH_Undead_King_Attack_Chop");
+            OH_Undead_King_Attack_Chop.Configurable = Configurability.Disabled;
+            OH_Undead_King_Attack_Chop.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_damages.m_slash = KingChopDamage.Value;
+            OH_Undead_King_Attack_Chop.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_attackForce = KingChopForce.Value;
+
+            Item OH_Undead_King_Attack_Slash = new Item("undeadknight", "OH_Undead_King_Attack_Slash");
+            OH_Undead_King_Attack_Slash.Configurable = Configurability.Disabled;
+            OH_Undead_King_Attack_Slash.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_damages.m_slash = KingSlashDamage.Value;
+            OH_Undead_King_Attack_Slash.Prefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_attackForce = KingSlashForce.Value;
+
+
             Item OH_Undead_Knight_Sword = new("undeadknight", "OH_Undead_Knight_Sword");
             OH_Undead_Knight_Sword.Name.English("Stormreaver"); // You can use this to fix the display name in code
             OH_Undead_Knight_Sword.Description.English("A sharp blade owned by a fallen knight.");
             OH_Undead_Knight_Sword.Configurable = Configurability.Full;
             OH_Undead_Knight_Sword.Crafting.Add("OH_Undead_Repair_Station", 1);
             OH_Undead_Knight_Sword.RequiredItems.Add("OH_Knights_Spirit_Sword", 1);
-            OH_Undead_Knight_Sword.RequiredUpgradeItems.Add("OH_Broken_Sword", 5);
+            OH_Undead_Knight_Sword.RequiredUpgradeItems.Add("OH_Kings_Spirit_Shard", 1);
 
             Item OH_Undead_Knight_Sword1 = new("undeadknight", "OH_Undead_Knight_Sword1");
             OH_Undead_Knight_Sword1.Name.English("Shadowcleaver"); // You can use this to fix the display name in code
@@ -155,7 +207,7 @@ namespace OHUndeadKnight
             OH_Undead_Knight_Sword1.Configurable = Configurability.Full;
             OH_Undead_Knight_Sword1.Crafting.Add("OH_Undead_Repair_Station", 1);
             OH_Undead_Knight_Sword1.RequiredItems.Add("OH_Knights_Spirit_Sword", 1);
-            OH_Undead_Knight_Sword1.RequiredUpgradeItems.Add("OH_Broken_Sword", 5);
+            OH_Undead_Knight_Sword1.RequiredUpgradeItems.Add("OH_Kings_Spirit_Shard", 1);
 
             Item OH_Undead_Knight_Sword2 = new("undeadknight", "OH_Undead_Knight_Sword2");
             OH_Undead_Knight_Sword2.Name.English("Wyrmbane"); // You can use this to fix the display name in code
@@ -163,7 +215,7 @@ namespace OHUndeadKnight
             OH_Undead_Knight_Sword2.Configurable = Configurability.Full;
             OH_Undead_Knight_Sword2.Crafting.Add("OH_Undead_Repair_Station", 1);
             OH_Undead_Knight_Sword2.RequiredItems.Add("OH_Knights_Spirit_Sword", 1);
-            OH_Undead_Knight_Sword2.RequiredUpgradeItems.Add("OH_Broken_Sword", 5);
+            OH_Undead_Knight_Sword2.RequiredUpgradeItems.Add("OH_Kings_Spirit_Shard", 1);
 
             Item OH_Undead_Knight_Sword3 = new("undeadknight", "OH_Undead_Knight_Sword3");
             OH_Undead_Knight_Sword3.Name.English("Nightfall"); // You can use this to fix the display name in code
@@ -171,7 +223,7 @@ namespace OHUndeadKnight
             OH_Undead_Knight_Sword3.Configurable = Configurability.Full;
             OH_Undead_Knight_Sword3.Crafting.Add("OH_Undead_Repair_Station", 1);
             OH_Undead_Knight_Sword3.RequiredItems.Add("OH_Knights_Spirit_Sword", 1);
-            OH_Undead_Knight_Sword3.RequiredUpgradeItems.Add("OH_Broken_Sword", 5);
+            OH_Undead_Knight_Sword3.RequiredUpgradeItems.Add("OH_Kings_Spirit_Shard", 1);
 
             Item OH_Undead_Knight_Sword4 = new("undeadknight", "OH_Undead_Knight_Sword4");
             OH_Undead_Knight_Sword4.Name.English("Ironclaw"); // You can use this to fix the display name in code
@@ -179,7 +231,7 @@ namespace OHUndeadKnight
             OH_Undead_Knight_Sword4.Configurable = Configurability.Full;
             OH_Undead_Knight_Sword4.Crafting.Add("OH_Undead_Repair_Station", 1);
             OH_Undead_Knight_Sword4.RequiredItems.Add("OH_Knights_Spirit_Sword", 1);
-            OH_Undead_Knight_Sword4.RequiredUpgradeItems.Add("OH_Broken_Sword", 5);
+            OH_Undead_Knight_Sword4.RequiredUpgradeItems.Add("OH_Kings_Spirit_Shard", 1);
 
             Item OH_Undead_Knight_Sword5 = new("undeadknight", "OH_Undead_Knight_Sword5");
             OH_Undead_Knight_Sword5.Name.English("Bloodsong"); // You can use this to fix the display name in code
@@ -187,7 +239,7 @@ namespace OHUndeadKnight
             OH_Undead_Knight_Sword5.Configurable = Configurability.Full;
             OH_Undead_Knight_Sword5.Crafting.Add("OH_Undead_Repair_Station", 1);
             OH_Undead_Knight_Sword5.RequiredItems.Add("OH_Knights_Spirit_Sword", 1);
-            OH_Undead_Knight_Sword5.RequiredUpgradeItems.Add("OH_Broken_Sword", 5);
+            OH_Undead_Knight_Sword5.RequiredUpgradeItems.Add("OH_Kings_Spirit_Shard", 1);
 
             Item OH_Undead_Knight_Sword6 = new("undeadknight", "OH_Undead_Knight_Sword6");
             OH_Undead_Knight_Sword6.Name.English("Hearthguard"); // You can use this to fix the display name in code
@@ -195,7 +247,7 @@ namespace OHUndeadKnight
             OH_Undead_Knight_Sword6.Configurable = Configurability.Full;
             OH_Undead_Knight_Sword6.Crafting.Add("OH_Undead_Repair_Station", 1);
             OH_Undead_Knight_Sword6.RequiredItems.Add("OH_Knights_Spirit_Sword", 1);
-            OH_Undead_Knight_Sword6.RequiredUpgradeItems.Add("OH_Broken_Sword", 5);
+            OH_Undead_Knight_Sword6.RequiredUpgradeItems.Add("OH_Kings_Spirit_Shard", 1);
 
             #endregion
 
@@ -225,6 +277,31 @@ namespace OHUndeadKnight
             OH_Undead_Knight.Prefab.GetComponent<Humanoid>().m_speed = KnightSpeed.Value;
             OH_Undead_Knight.Prefab.GetComponent<Humanoid>().m_health = KnightHealth.Value;
             OH_Undead_Knight.Prefab.GetComponent<Humanoid>().m_damageModifiers = ParseDamageModifier(KnightResistance.Value);
+
+            Creature OH_Undead_King = new("undeadknight", "OH_Undead_King")
+            {
+                Biome = Heightmap.Biome.None,
+                CanSpawn = true,
+                SpawnChance = 100,
+                CreatureFaction = Character.Faction.Undead,
+                GroupSize = new CreatureManager.Range(1, 1),
+                Maximum = 1
+
+            };
+            OH_Undead_King.Localize()
+               .English("Undead Hollow King");
+            OH_Undead_King.Drops["BoneFragments"].Amount = new CreatureManager.Range(1, 2);
+            OH_Undead_King.Drops["BoneFragments"].DropChance = 50f;
+            OH_Undead_King.Drops["Coins"].Amount = new CreatureManager.Range(25, 50);
+            OH_Undead_King.Drops["Coins"].DropChance = 50f;
+            OH_Undead_King.Drops["OH_Kings_Spirit_Shard"].Amount = new CreatureManager.Range(1, 1);
+            OH_Undead_King.Drops["OH_Kings_Spirit_Shard"].DropChance = 0.3f;
+
+            OH_Undead_King.Prefab.GetComponent<Humanoid>().m_runSpeed = KingRunSpeed.Value;
+            OH_Undead_King.Prefab.GetComponent<Humanoid>().m_walkSpeed = KingWalkingSpeed.Value;
+            OH_Undead_King.Prefab.GetComponent<Humanoid>().m_speed = KingSpeed.Value;
+            OH_Undead_King.Prefab.GetComponent<Humanoid>().m_health = KingHealth.Value;
+            OH_Undead_King.Prefab.GetComponent<Humanoid>().m_damageModifiers = ParseDamageModifier(KingResistance.Value);
 
             #endregion
 
